@@ -1,0 +1,724 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.4.1124.51302",
+      "templateHash": "17362171837715106296"
+    }
+  },
+  "parameters": {
+    "virtualMachineNameSuffix": {
+      "type": "string",
+      "maxLength": 14,
+      "metadata": {
+        "description": "Virtual machine name. Do not include numerical identifier."
+      }
+    },
+    "vmCount": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "metadata": {
+        "description": "Optional. Can be used to deploy multiple instances in a single deployment."
+      }
+    },
+    "startIndex": {
+      "type": "int",
+      "defaultValue": 1,
+      "minValue": 1,
+      "metadata": {
+        "description": "Optional. If doing multiple instances, you can change what number it starts from for naming purposes. Default is start from 01."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Virtual machine location."
+      }
+    },
+    "virtualMachineSize": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual machine size, e.g. Standard_D2_v3, Standard_DS3, etc."
+      }
+    },
+    "osDiskType": {
+      "type": "string",
+      "defaultValue": "Premium_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS",
+        "UltraSSD_LRS"
+      ],
+      "metadata": {
+        "description": "Operating system disk type. E.g. If your VM is a standard size you must use a standard disk type."
+      }
+    },
+    "dataDisksDefinition": {
+      "type": "array",
+      "metadata": {
+        "note": "Sample input",
+        "dataDisksDefinition": [
+          {
+            "diskType": "StandardSSD_LRS",
+            "diskSize": 64,
+            "caching": "none",
+            "createOption": "empty"
+          }
+        ],
+        "description": "Array of objects defining data disks, including diskType and size"
+      }
+    },
+    "operatingSystem": {
+      "type": "string",
+      "defaultValue": "enterprise",
+      "allowedValues": [
+        "enterprise",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "Virtual machine Windows operating system."
+      }
+    },
+    "enableHybridBenefit": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Enable if want to use Hybrid Benefit Licensing."
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Virtual machine local administrator username."
+      }
+    },
+    "adminPassword": {
+      "type": "secureString",
+      "metadata": {
+        "description": "Local administrator password."
+      }
+    },
+    "sqlAuthUpdateUserName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "(Optional) Create SQL Server sysadmin login user name"
+      }
+    },
+    "sqlAuthUpdatePassword": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "(Optional) Create SQL Server sysadmin login password"
+      }
+    },
+    "storageId": {
+      "type": "string",
+      "metadata": {
+        "description": "ResourceId of the Storage Account to send Diagnostic Logs"
+      }
+    },
+    "subnetId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource Id of Subnet to place VM into."
+      }
+    },
+    "useAvailabilityZones": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "If set to true, the availability zone will be picked based on instance ID."
+      }
+    },
+    "logAnalyticsId": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource Id of Log Analytics Workspace for VM Diagnostics"
+      }
+    },
+    "enableDomainJoin": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "True/False on whether to domain join VM as part of deployment."
+      }
+    },
+    "domainToJoin": {
+      "type": "string",
+      "metadata": {
+        "description": "FQDN of Domain to Join."
+      }
+    },
+    "OUPath": {
+      "type": "string",
+      "metadata": {
+        "description": "OU to join VM into."
+      }
+    },
+    "domainJoinUser": {
+      "type": "string",
+      "metadata": {
+        "description": "Username of the Domain Join process. Required when enableDomainJoin is true"
+      }
+    },
+    "timeZone": {
+      "type": "string",
+      "defaultValue": "AUS Eastern Standard Time",
+      "metadata": {
+        "description": "Time Zone setting for Virtual Machine"
+      }
+    },
+    "domainJoinPassword": {
+      "type": "secureString",
+      "metadata": {
+        "description": "Password for the user of the Domain Join process. Required when enableDomainJoin is true"
+      }
+    },
+    "tags": {
+      "type": "object",
+      "defaultValue": {},
+      "metadata": {
+        "description": "Object containing resource tags."
+      }
+    },
+    "diskConfigurationType": {
+      "type": "string",
+      "defaultValue": "NEW",
+      "metadata": {
+        "description": "Object containing resource tags."
+      }
+    },
+    "StorageWorkloadType": {
+      "type": "string",
+      "defaultValue": "General",
+      "metadata": {
+        "description": "StorageWorkloadType"
+      }
+    },
+    "dataPath": {
+      "type": "string",
+      "defaultValue": "G:\\SQLData",
+      "metadata": {
+        "description": "Path for SQL Data files. Please choose drive letter from F to Z, and other drives from A to E are reserved for system"
+      }
+    },
+    "logPath": {
+      "type": "string",
+      "defaultValue": "L:\\SQLLog",
+      "metadata": {
+        "description": "Path for SQL Log files. Please choose drive letter from F to Z and different than the one used for SQL data. Drive letter from A to E are reserved for system"
+      }
+    },
+    "sqlServerImageType": {
+      "type": "string",
+      "defaultValue": "",
+      "allowedValues": [
+        "SQL2017-WS2016",
+        "SQL2016SP2-WS2016",
+        "SQL2019-WS2019",
+        ""
+      ],
+      "metadata": {
+        "description": "Select the version of SQL Server Image type"
+      }
+    },
+    "sqlImageSku": {
+      "type": "string",
+      "allowedValues": [
+        "Developer",
+        "Enterprise"
+      ],
+      "metadata": {
+        "description": "SQL Server Image SKU"
+      }
+    },
+    "sqlConnectivityType": {
+      "type": "string",
+      "defaultValue": "PRIVATE",
+      "allowedValues": [
+        "LOCAL",
+        "PRIVATE",
+        "PUBLIC"
+      ],
+      "metadata": {
+        "description": "SQL server connectivity option"
+      }
+    },
+    "sqlPortNumber": {
+      "type": "int",
+      "defaultValue": 1433,
+      "metadata": {
+        "description": "SQL server port"
+      }
+    },
+    "sqlStorageWorkloadType": {
+      "type": "string",
+      "defaultValue": "GENERAL",
+      "allowedValues": [
+        "DW",
+        "GENERAL",
+        "OLTP"
+      ],
+      "metadata": {
+        "description": "SQL server workload type"
+      }
+    },
+    "sqlServerLicenseType": {
+      "type": "string",
+      "defaultValue": "AHUB",
+      "allowedValues": [
+        "AHUB",
+        "PAYG",
+        "DR"
+      ],
+      "metadata": {
+        "description": "SQL server license type"
+      }
+    },
+    "enableAkvEkm": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable or disable EKM provider for Azure Key Vault."
+      }
+    },
+    "sqlAkvUrl": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Azure Key Vault URL (only required when enableAkvEkm is set to true)."
+      }
+    },
+    "sqlAkvCredentialName": {
+      "type": "string",
+      "defaultValue": "sysadmin_ekm_cred",
+      "metadata": {
+        "description": "name of the sql credential created for Azure Key Vault EKM provider (only required when enableAkvEkm is set to true)."
+      }
+    },
+    "sqlAkvPrincipalName": {
+      "type": "string",
+      "metadata": {
+        "description": "Azure service principal Application Id for accessing the EKM Azure Key Vault (only required when enableAkvEkm is set to true)."
+      }
+    },
+    "sqlAkvPrincipalSecret": {
+      "type": "secureString",
+      "metadata": {
+        "description": "Azure service principal secret for accessing the EKM Azure Key Vault (only required when enableAkvEkm is set to true)."
+      }
+    },
+    "dataDisksLUNs": {
+      "type": "array",
+      "metadata": {
+        "description": "Logical Disk Numbers (LUN) for SQL data disks."
+      }
+    },
+    "logDisksLUNs": {
+      "type": "array",
+      "metadata": {
+        "description": "Logical Disk Numbers (LUN) for SQL log disks."
+      }
+    },
+    "tempDBPath": {
+      "type": "string",
+      "defaultValue": "H:\\SQLTemp",
+      "metadata": {
+        "description": "Default path for SQL Temp DB files."
+      }
+    },
+    "tempDBDisksLUNs": {
+      "type": "array",
+      "metadata": {
+        "description": "Logical Disk Numbers (LUN) for SQL Temp DB disks."
+      }
+    },
+    "rServicesEnabled": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable or disable R services (SQL 2016 onwards)."
+      }
+    },
+    "sqlVmGroupName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the SQL Always-On cluster name. Only required when deploying a SQL cluster."
+      }
+    },
+    "sqlClusterBootstrapAccountPassword": {
+      "type": "secureString",
+      "defaultValue": "",
+      "metadata": {
+        "description": "password for the cluster bootstrap account. Only required when deploying a SQL cluster."
+      }
+    },
+    "sqlClusterOperatorAccountPassword": {
+      "type": "secureString",
+      "defaultValue": "",
+      "metadata": {
+        "description": "password for the cluster operator account. Only required when deploying a SQL cluster."
+      }
+    },
+    "sqlServiceAccountPassword": {
+      "type": "secureString",
+      "defaultValue": "",
+      "metadata": {
+        "description": "password for the sql service account. Only required when deploying a SQL cluster."
+      }
+    },
+    "enableAutoBackup": {
+      "type": "bool",
+      "metadata": {
+        "description": "Enable or disable SQL server auto backup."
+      }
+    },
+    "enableAutoBackupEncryption": {
+      "type": "bool",
+      "metadata": {
+        "description": "Enable or disable encryption for SQL server auto backup."
+      }
+    },
+    "autoBackupRetentionPeriod": {
+      "type": "int",
+      "defaultValue": 30,
+      "metadata": {
+        "description": "SQL backup retention period. 1-30 days"
+      }
+    },
+    "autoBackupStorageAccountName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "name of the storage account used for SQL auto backup"
+      }
+    },
+    "autoBackupStorageAccountResourceGroup": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group for the storage account used for SQL Auto Backup"
+      }
+    },
+    "autoBackupEncryptionPassword": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "password for SQL backup encryption. Required when 'enableAutoBackupEncryption' is set to 'true'."
+      }
+    },
+    "autoBackupSystemDbs": {
+      "type": "bool",
+      "defaultValue": true,
+      "metadata": {
+        "description": "Include or exclude system databases from SQL server auto backup."
+      }
+    },
+    "autoBackupScheduleType": {
+      "type": "string",
+      "defaultValue": "Automated",
+      "allowedValues": [
+        "Manual",
+        "Automated"
+      ],
+      "metadata": {
+        "description": "SQL server auto backup schedule type - 'Manual' or 'Automated'."
+      }
+    },
+    "autoBackupFullBackupFrequency": {
+      "type": "string",
+      "defaultValue": "Daily",
+      "allowedValues": [
+        "Daily",
+        "Weekly"
+      ],
+      "metadata": {
+        "description": "SQL server auto backup full backup frequency - 'Daily' or 'Weekly'. Required parameter when 'autoBackupScheduleType' is set to 'Manual'. Default value is 'Daily'."
+      }
+    },
+    "autoBackupFullBackupStartTime": {
+      "type": "int",
+      "defaultValue": 23,
+      "metadata": {
+        "description": "SQL server auto backup full backup start time - 0-23 hours. Required parameter when 'autoBackupScheduleType' is set to 'Manual'. Default value is 23."
+      }
+    },
+    "autoBackupFullBackupWindowHours": {
+      "type": "int",
+      "defaultValue": 2,
+      "metadata": {
+        "description": "SQL server auto backup full backup allowed duration - 1-23 hours. Required parameter when 'autoBackupScheduleType' is set to 'Manual'. Default value is 2."
+      }
+    },
+    "autoBackupLogBackupFrequency": {
+      "type": "int",
+      "defaultValue": 60,
+      "metadata": {
+        "description": "SQL server auto backup log backup frequency - 5-60 minutes. Required parameter when 'autoBackupScheduleType' is set to 'Manual'. Default value is 60."
+      }
+    },
+    "enableResourceLock": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Enable a Can Not Delete Resource Lock.  Useful for production workloads."
+      }
+    }
+  },
+  "resources": [
+    {
+      "copy": {
+        "name": "nic",
+        "count": "[length(range(parameters('startIndex'), parameters('vmCount')))]"
+      },
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2021-02-01",
+      "name": "[format('{0}{1}-nic01', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()]))]",
+      "location": "[parameters('location')]",
+      "tags": "[if(not(empty(parameters('tags'))), parameters('tags'), json('null'))]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "subnet": {
+                "id": "[parameters('subnetId')]"
+              },
+              "privateIPAllocationMethod": "Dynamic"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "copy": {
+        "name": "vm",
+        "count": "[length(range(parameters('startIndex'), parameters('vmCount')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2021-04-01",
+      "name": "[format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()]))]",
+      "location": "[parameters('location')]",
+      "tags": "[if(not(empty(parameters('tags'))), parameters('tags'), json('null'))]",
+      "zones": "[if(parameters('useAvailabilityZones'), createArray(add(mod(range(parameters('startIndex'), parameters('vmCount'))[copyIndex()], 3), 1)), createArray())]",
+      "properties": {
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', format('{0}{1}-nic01', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()])))]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()]))]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]",
+          "windowsConfiguration": {
+            "enableAutomaticUpdates": true,
+            "provisionVMAgent": true,
+            "timeZone": "[parameters('timeZone')]"
+          }
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('virtualMachineSize')]"
+        },
+        "storageProfile": {
+          "copy": [
+            {
+              "name": "dataDisks",
+              "count": "[length(parameters('dataDisksDefinition'))]",
+              "input": {
+                "name": "[format('{0}{1}_datadisk_{2}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()]), copyIndex('dataDisks'))]",
+                "diskSizeGB": "[parameters('dataDisksDefinition')[copyIndex('dataDisks')].diskSize]",
+                "lun": "[copyIndex('dataDisks')]",
+                "caching": "[parameters('dataDisksDefinition')[copyIndex('dataDisks')].caching]",
+                "createOption": "Empty",
+                "managedDisk": {
+                  "storageAccountType": "[parameters('osDiskType')]"
+                }
+              }
+            }
+          ],
+          "imageReference": {
+            "publisher": "microsoftsqlserver",
+            "offer": "sql2019-ws2022",
+            "sku": "[parameters('operatingSystem')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[format('{0}{1}_osdisk', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()]))]",
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[parameters('osDiskType')]"
+            }
+          }
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": true
+          }
+        },
+        "licenseType": "[if(parameters('enableHybridBenefit'), 'Windows_Server', json('null'))]"
+      },
+      "dependsOn": [
+        "nic"
+      ]
+    },
+    {
+      "copy": {
+        "name": "sql_vm",
+        "count": "[length(range(parameters('startIndex'), parameters('vmCount')))]"
+      },
+      "type": "Microsoft.SqlVirtualMachine/sqlVirtualMachines",
+      "apiVersion": "2017-03-01-preview",
+      "name": "[format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()]))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "virtualMachineResourceId": "[resourceId('Microsoft.Compute/virtualMachines', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[copyIndex()])))]",
+        "sqlManagement": "Full",
+        "sqlServerLicenseType": "[parameters('sqlServerLicenseType')]",
+        "sqlVirtualMachineGroupResourceId": "[if(not(empty(parameters('sqlVmGroupName'))), resourceId('Microsoft.SqlVirtualMachine/sqlVirtualMachineGroups', parameters('sqlVmGroupName')), null())]",
+        "autoPatchingSettings": {
+          "enable": false
+        },
+        "storageConfigurationSettings": {
+          "diskConfigurationType": "NEW",
+          "storageWorkloadType": "[parameters('sqlStorageWorkloadType')]",
+          "sqlDataSettings": {
+            "luns": "[parameters('dataDisksLUNs')]",
+            "defaultFilePath": "[parameters('dataPath')]"
+          },
+          "sqlLogSettings": {
+            "luns": "[parameters('logDisksLUNs')]",
+            "defaultFilePath": "[parameters('logPath')]"
+          },
+          "sqlTempDbSettings": {
+            "luns": "[parameters('tempDBDisksLUNs')]",
+            "defaultFilePath": "[parameters('tempDBPath')]"
+          }
+        },
+        "serverConfigurationsManagementSettings": {
+          "sqlConnectivityUpdateSettings": {
+            "connectivityType": "[parameters('sqlConnectivityType')]",
+            "port": "[parameters('sqlPortNumber')]",
+            "sqlAuthUpdateUserName": "[parameters('sqlAuthUpdateUserName')]",
+            "sqlAuthUpdatePassword": "[parameters('sqlAuthUpdatePassword')]"
+          },
+          "additionalFeaturesServerConfigurations": {
+            "isRServicesEnabled": "[parameters('rServicesEnabled')]"
+          }
+        },
+        "wsfcDomainCredentials": {
+          "clusterBootstrapAccountPassword": "[if(not(empty(parameters('sqlVmGroupName'))), parameters('sqlClusterBootstrapAccountPassword'), null())]",
+          "clusterOperatorAccountPassword": "[if(not(empty(parameters('sqlVmGroupName'))), parameters('sqlClusterOperatorAccountPassword'), null())]",
+          "sqlServiceAccountPassword": "[if(not(empty(parameters('sqlVmGroupName'))), parameters('sqlServiceAccountPassword'), null())]"
+        }
+      },
+      "dependsOn": [
+        "extension_domainJoin",
+        "vm"
+      ]
+    },
+    {
+      "copy": {
+        "name": "extension_monitoring",
+        "count": "[length(range(0, parameters('vmCount')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2021-04-01",
+      "name": "[format('{0}/{1}', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])), 'Microsoft.EnterpriseCloud.Monitoring')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.EnterpriseCloud.Monitoring",
+        "type": "MicrosoftMonitoringAgent",
+        "typeHandlerVersion": "1.0",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "workspaceId": "[reference(parameters('logAnalyticsId'), '2015-03-20').customerId]"
+        },
+        "protectedSettings": {
+          "workspaceKey": "[listKeys(parameters('logAnalyticsId'), '2015-03-20').primarySharedKey]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])))]"
+      ]
+    },
+    {
+      "copy": {
+        "name": "extension_depAgent",
+        "count": "[length(range(0, parameters('vmCount')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2021-04-01",
+      "name": "[format('{0}/{1}', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])), 'DependencyAgentWindows')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Azure.Monitoring.DependencyAgent",
+        "type": "DependencyAgentWindows",
+        "typeHandlerVersion": "9.5",
+        "autoUpgradeMinorVersion": true
+      },
+      "dependsOn": [
+        "extension_monitoring",
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableDomainJoin')]",
+      "copy": {
+        "name": "extension_domainJoin",
+        "count": "[length(range(0, parameters('vmCount')))]"
+      },
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2021-04-01",
+      "name": "[format('{0}/{1}', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])), 'joindomain')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "JsonADDomainExtension",
+        "typeHandlerVersion": "1.3",
+        "autoUpgradeMinorVersion": true,
+        "settings": {
+          "Name": "[parameters('domainToJoin')]",
+          "OUPath": "[parameters('OUPath')]",
+          "User": "[format('{0}\\{1}', parameters('domainToJoin'), parameters('domainJoinUser'))]",
+          "Restart": "true",
+          "Options": 3
+        },
+        "protectedSettings": {
+          "Password": "[parameters('domainJoinPassword')]"
+        }
+      },
+      "dependsOn": [
+        "extension_depAgent",
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])))]"
+      ]
+    },
+    {
+      "condition": "[parameters('enableResourceLock')]",
+      "copy": {
+        "name": "deleteLock",
+        "count": "[length(range(0, parameters('vmCount')))]"
+      },
+      "type": "Microsoft.Authorization/locks",
+      "apiVersion": "2016-09-01",
+      "scope": "[format('Microsoft.Compute/virtualMachines/{0}', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])))]",
+      "name": "[format('{0}{1}-delete-lock', parameters('virtualMachineNameSuffix'), format('{0:D2}', add(range(0, parameters('vmCount'))[copyIndex()], parameters('startIndex'))))]",
+      "properties": {
+        "level": "CanNotDelete",
+        "notes": "Enabled as part of IaC Deployment"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', format('{0}{1}', parameters('virtualMachineNameSuffix'), format('{0:D2}', range(parameters('startIndex'), parameters('vmCount'))[range(0, parameters('vmCount'))[copyIndex()]])))]"
+      ]
+    }
+  ]
+}
